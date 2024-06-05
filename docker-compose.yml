@@ -1,0 +1,57 @@
+version: '3.7'
+
+services:
+  frontend:
+    build:
+      context: ./fronted
+      dockerfile: Dockerfile
+    ports:
+      - "3008:80"
+    environment:
+      - NODE_ENV=production
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - ./backend/.env # Load environment variables frsom .env file
+    depends_on:
+      - mongodb
+    # Healthcheck configuration
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=basit
+      - MONGO_INITDB_ROOT_PASSWORD=basit@321
+      - MONGO_INITDB_DATABASE=mydatabase
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=basit@321
+      
+volumes:
+  mongodb_data:
